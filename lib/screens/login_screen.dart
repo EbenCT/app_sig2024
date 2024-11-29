@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
 import '../services/api_service.dart';
+import '../models/user.dart';
 import 'menu_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,17 +16,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() async {
     try {
-      final user = await authController.login(
+      final User user = await authController.login(
         _usernameController.text,
         _passwordController.text,
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MenuScreen(),
-        ),
-      );
+
+      if (user.status == 'OK') {
+        // Usuario autenticado correctamente, navegar al menú principal.
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MenuScreen(user: user),
+          ),
+        );
+      } else {
+        // Manejo de errores según el estado devuelto.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${user.status}")),
+        );
+      }
     } catch (e) {
+      print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error al iniciar sesión")),
       );
@@ -39,11 +50,22 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(controller: _usernameController, decoration: InputDecoration(labelText: 'Usuario')),
-            TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Contraseña'), obscureText: true),
+            TextField(
+              controller: _usernameController,
+              decoration: InputDecoration(labelText: 'Usuario'),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: 'Contraseña'),
+              obscureText: true,
+            ),
             SizedBox(height: 20),
-            ElevatedButton(onPressed: _login, child: Text('Ingresar')),
+            ElevatedButton(
+              onPressed: _login,
+              child: Text('Ingresar'),
+            ),
           ],
         ),
       ),
