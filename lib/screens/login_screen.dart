@@ -49,24 +49,35 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(title: Text('Iniciar Sesión')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Usuario'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Contraseña'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: Text('Ingresar'),
-            ),
-          ],
+        child: SingleChildScrollView( // Permite desplazamiento en pantallas pequeñas.
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo de la empresa
+              Image.asset(
+                'assets/logo-coosivrl.png', // Ruta del logo en la carpeta `assets/`
+                height: 150, // Ajusta la altura del logo según sea necesario
+              ),
+              SizedBox(height: 40), // Espacio entre el logo y los campos
+              // Campo de usuario
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: 'Usuario'),
+              ),
+              // Campo de contraseña
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(labelText: 'Contraseña'),
+                obscureText: true,
+              ),
+              SizedBox(height: 20),
+              // Botón de inicio de sesión
+              ElevatedButton(
+                onPressed: _login,
+                child: Text('Ingresar'),
+              ),
+            ],
+          ),
         ),
       ),
     );
