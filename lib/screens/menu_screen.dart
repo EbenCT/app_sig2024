@@ -74,6 +74,20 @@ class MenuScreen extends StatelessWidget {
                   },
                 ),
                 ListTile(
+                  leading: Icon(Icons.download),
+                  title: Text('Importar Cortes desde el Servidor'),
+                  onTap: () {
+                    _importCutsFromServer(context);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.upload),
+                  title: Text('Exportar Cortes al Servidor'),
+                  onTap: () {
+                    _exportCutsToServer(context);
+                  },
+                ),
+                ListTile(
                   leading: Icon(Icons.logout),
                   title: Text('Salir'),
                   onTap: () {
@@ -86,5 +100,28 @@ class MenuScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Función para importar cortes desde el servidor.
+  void _importCutsFromServer(BuildContext context) async {
+    // Aquí puedes implementar la lógica para consumir la API de importación.
+    // Por ahora, mostraré un mensaje de ejemplo.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Importando cortes desde el servidor...')),
+    );
+
+    // Llama a un método del servicio (ApiService) para obtener los datos.
+    // Luego actualiza el estado de la app (ej. CutsProvider).
+  }
+
+  // Función para exportar cortes al servidor.
+  void _exportCutsToServer(BuildContext context) async {
+    // Aquí puedes implementar la lógica para consumir la API de exportación.
+    // Por ahora, mostraré un mensaje de ejemplo.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exportando cortes al servidor...')),
+    );
+
+    // Llama a un método del servicio (ApiService) para enviar los datos al servidor.
   }
 }
