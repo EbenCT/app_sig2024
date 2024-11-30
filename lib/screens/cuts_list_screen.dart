@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/cut.dart';
 import '../providers/cuts_provider.dart';
 
 class CutsListScreen extends StatelessWidget {
