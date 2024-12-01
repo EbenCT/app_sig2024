@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/cut_point.dart';
 import '../models/rutas.dart';
 import '../services/api_service.dart';
 
@@ -10,6 +11,7 @@ class ImportCutsScreen extends StatefulWidget {
 class _ImportCutsScreenState extends State<ImportCutsScreen> {
   final ApiService apiService = ApiService();
   List<RouteData> _routes = [];
+  List<CutPoint> _cutPoints = [];
   RouteData? _selectedRoute;
 
   @override
@@ -25,9 +27,26 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
         _routes = routes;
       });
     } catch (e) {
-      print("Error al cargar rutas: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error al cargar rutas")),
+      );
+    }
+  }
+
+  Future<void> _loadCutPoints() async {
+    if (_selectedRoute == null) return;
+    try {
+      final cutPoints = await apiService.fetchCutPoints(
+        _selectedRoute!.bsrutnrut,
+        0,
+        _selectedRoute!.bsrutcper, // Cambia según sea necesario.
+      );
+      setState(() {
+        _cutPoints = cutPoints;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al cargar puntos de corte")),
       );
     }
   }
@@ -58,13 +77,29 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _selectedRoute != null
-                  ? () {
-                      // Acción al confirmar la selección
-                      print("Ruta seleccionada: ${_selectedRoute!.dNomb}");
-                    }
-                  : null,
+              onPressed: _loadCutPoints,
               child: Text("Confirmar"),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _cutPoints.length,
+                itemBuilder: (context, index) {
+                  final point = _cutPoints[index];
+                  return ListTile(
+                    title: Text("${point.dNomb}"),
+                    subtitle: Text("C.U.: ${point.bscocNcnt}, C.F.: ${point.bscntCodf}"),
+                    trailing: Text("Lat: ${point.bscntlati}, Lon: ${point.bscntlogi}"),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Acción para grabar
+              },
+              child: Text("Grabar"),
             ),
           ],
         ),
