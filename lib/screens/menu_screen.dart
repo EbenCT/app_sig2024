@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
+import 'import_cuts_screen.dart';
 import 'map_screen.dart';
 import 'cuts_list_screen.dart';
 
@@ -77,7 +78,10 @@ class MenuScreen extends StatelessWidget {
                   leading: Icon(Icons.download),
                   title: Text('Importar Cortes desde el Servidor'),
                   onTap: () {
-                    _importCutsFromServer(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ImportCutsScreen()),
+                    );
                   },
                 ),
                 ListTile(
@@ -100,18 +104,6 @@ class MenuScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // Función para importar cortes desde el servidor.
-  void _importCutsFromServer(BuildContext context) async {
-    // Aquí puedes implementar la lógica para consumir la API de importación.
-    // Por ahora, mostraré un mensaje de ejemplo.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Importando cortes desde el servidor...')),
-    );
-
-    // Llama a un método del servicio (ApiService) para obtener los datos.
-    // Luego actualiza el estado de la app (ej. CutsProvider).
   }
 
   // Función para exportar cortes al servidor.

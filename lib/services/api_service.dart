@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:app_sig/utils/variables.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:xml/xml.dart';
 import '../models/cut.dart';
+import '../models/rutas.dart';
 
 class ApiService {
   final String baseUrl = Api;
@@ -58,6 +59,58 @@ class ApiService {
       };
     } else {
       throw Exception("Respuesta de login inválida");
+    }
+  }
+
+  Future<List<RouteData>> fetchRoutes() async {
+    final String soapEnvelope = '''
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <W0Corte_ObtenerRutas xmlns="http://activebs.net/">
+      <liCper>0</liCper>
+    </W0Corte_ObtenerRutas>
+  </soap:Body>
+</soap:Envelope>
+''';
+
+    final headers = {
+      'Content-Type': 'text/xml; charset=utf-8',
+      'SOAPAction': '"http://activebs.net/W0Corte_ObtenerRutas"',
+    };
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/wsBS.asmx'),
+      headers: headers,
+      body: soapEnvelope,
+    );
+
+    if (response.statusCode == 200) {
+      final xmlResponse = XmlDocument.parse(response.body);
+      final List<RouteData> routes = [];
+
+      // Extraer datos de cada tabla
+      for (final table in xmlResponse.findAllElements('Table')) {
+        final routeData = RouteData.fromXml({
+          'bsrutnrut': table.findElements('bsrutnrut').first.text,
+          'bsrutdesc': table.findElements('bsrutdesc').first.text,
+          'bsrutabrv': table.findElements('bsrutabrv').first.text,
+          'bsruttipo': table.findElements('bsruttipo').first.text,
+          'bsrutnzon': table.findElements('bsrutnzon').first.text,
+          'bsrutfcor': table.findElements('bsrutfcor').first.text,
+          'bsrutcper': table.findElements('bsrutcper').first.text,
+          'bsrutstat': table.findElements('bsrutstat').first.text,
+          'bsrutride': table.findElements('bsrutride').first.text,
+          'dNomb': table.findElements('dNomb').first.text,
+          'GbzonNzon': table.findElements('GbzonNzon').first.text,
+          'dNzon': table.findElements('dNzon').first.text,
+        });
+        routes.add(routeData);
+      }
+
+      return routes;
+    } else {
+      throw Exception("Error al obtener las rutas: ${response.statusCode}");
     }
   }
 
