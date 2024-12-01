@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
+import 'import_cuts_screen.dart';
 import 'map_screen.dart';
 import 'cuts_list_screen.dart';
 
@@ -74,6 +75,23 @@ class MenuScreen extends StatelessWidget {
                   },
                 ),
                 ListTile(
+                  leading: Icon(Icons.download),
+                  title: Text('Importar Cortes desde el Servidor'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ImportCutsScreen()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.upload),
+                  title: Text('Exportar Cortes al Servidor'),
+                  onTap: () {
+                    _exportCutsToServer(context);
+                  },
+                ),
+                ListTile(
                   leading: Icon(Icons.logout),
                   title: Text('Salir'),
                   onTap: () {
@@ -86,5 +104,16 @@ class MenuScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Función para exportar cortes al servidor.
+  void _exportCutsToServer(BuildContext context) async {
+    // Aquí puedes implementar la lógica para consumir la API de exportación.
+    // Por ahora, mostraré un mensaje de ejemplo.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exportando cortes al servidor...')),
+    );
+
+    // Llama a un método del servicio (ApiService) para enviar los datos al servidor.
   }
 }
