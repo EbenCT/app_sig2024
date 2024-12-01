@@ -13,6 +13,7 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
   List<RouteData> _routes = [];
   List<CutPoint> _cutPoints = [];
   RouteData? _selectedRoute;
+  final TextEditingController _codeController = TextEditingController();
 
   @override
   void initState() {
@@ -24,7 +25,24 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
     try {
       final routes = await apiService.fetchRoutes();
       setState(() {
-        _routes = routes;
+        // Agrega la opción "TODOS LOS CORTES" al inicio.
+        _routes = [
+          RouteData(
+            bsrutnrut: 1,
+            bsrutdesc: "TODOS LOS CORTES",
+            bsrutabrv: "",
+            bsruttipo: 0,
+            bsrutnzon: 0,
+            bsrutfcor: "",
+            bsrutcper: 0,
+            bsrutstat: 0,
+            bsrutride: 0,
+            dNomb: "TODOS LOS CORTES",
+            gbzonNzon: 0,
+            dNzon: "",
+          ),
+          ...routes,
+        ];
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -33,13 +51,44 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
     }
   }
 
-  Future<void> _loadCutPoints() async {
-    if (_selectedRoute == null) return;
+  Future<void> _loadCutPoints({RouteData? selectedRoute, String? fixedCode}) async {
+    if (selectedRoute == null && fixedCode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Por favor seleccione una ruta")),
+      );
+      return;
+    }
+
     try {
+      if (fixedCode != null) {
+        // Selecciona automáticamente la ruta basada en el código fijo.
+        final matchingRoute = _routes.firstWhere(
+          (route) => route.bsrutride.toString() == fixedCode,
+          orElse: () => RouteData(
+            bsrutnrut: 1,
+            bsrutdesc: "TODOS LOS CORTES",
+            bsrutabrv: "",
+            bsruttipo: 0,
+            bsrutnzon: 0,
+            bsrutfcor: "",
+            bsrutcper: 0,
+            bsrutstat: 0,
+            bsrutride: 0,
+            dNomb: "TODOS LOS CORTES",
+            gbzonNzon: 0,
+            dNzon: "",
+          ),
+        );
+
+        setState(() {
+          _selectedRoute = matchingRoute;
+        });
+      }
+
       final cutPoints = await apiService.fetchCutPoints(
-        _selectedRoute!.bsrutnrut,
+        _selectedRoute?.bsrutnrut ?? 1,
         0,
-        _selectedRoute!.bsrutcper, // Cambia según sea necesario.
+        _selectedRoute?.bsrutcper ?? 0,
       );
       setState(() {
         _cutPoints = cutPoints;
@@ -59,6 +108,7 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Lista desplegable
             DropdownButton<RouteData>(
               value: _selectedRoute,
               hint: Text("Seleccione una ruta"),
@@ -76,11 +126,31 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
               },
             ),
             SizedBox(height: 20),
+            // Campo de texto para el código fijo
+            TextField(
+              controller: _codeController,
+              decoration: InputDecoration(
+                labelText: "Ingrese Código Fijo",
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 20),
+            // Botón Confirmar
             ElevatedButton(
-              onPressed: _loadCutPoints,
+              onPressed: () {
+                final fixedCode = _codeController.text.isNotEmpty
+                    ? _codeController.text
+                    : null;
+                _loadCutPoints(
+                  selectedRoute: fixedCode == null ? _selectedRoute : null,
+                  fixedCode: fixedCode,
+                );
+              },
               child: Text("Confirmar"),
             ),
             SizedBox(height: 20),
+            // Lista de cortes
             Expanded(
               child: ListView.builder(
                 itemCount: _cutPoints.length,
@@ -95,6 +165,7 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
               ),
             ),
             SizedBox(height: 20),
+            // Botón Grabar
             ElevatedButton(
               onPressed: () {
                 // Acción para grabar
