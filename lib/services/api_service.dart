@@ -3,6 +3,7 @@ import 'package:app_sig/utils/variables.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import '../models/cut.dart';
+import '../models/cut_point.dart';
 import '../models/rutas.dart';
 
 class ApiService {
@@ -113,6 +114,62 @@ class ApiService {
       throw Exception("Error al obtener las rutas: ${response.statusCode}");
     }
   }
+
+  Future<List<CutPoint>> fetchCutPoints(int liNrut, int liNcnt, int liCper) async {
+  final String soapEnvelope = '''
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <W2Corte_ReporteParaCortesSIG xmlns="http://activebs.net/">
+      <liNrut>$liNrut</liNrut>
+      <liNcnt>$liNcnt</liNcnt>
+      <liCper>$liCper</liCper>
+    </W2Corte_ReporteParaCortesSIG>
+  </soap:Body>
+</soap:Envelope>
+''';
+
+  final headers = {
+    'Content-Type': 'text/xml; charset=utf-8',
+    'SOAPAction': '"http://activebs.net/W2Corte_ReporteParaCortesSIG"',
+  };
+
+  final response = await http.post(
+    Uri.parse('$baseUrl/wsBS.asmx'),
+    headers: headers,
+    body: soapEnvelope,
+  );
+  print("respuesta api cortes:");
+  print(response.body);
+  if (response.statusCode == 200) {
+    final xmlResponse = XmlDocument.parse(response.body);
+    final List<CutPoint> cutPoints = [];
+
+    for (final table in xmlResponse.findAllElements('Table')) {
+      final cutPoint = CutPoint.fromXml({
+        'bscocNcoc': table.findElements('bscocNcoc').first.text,
+        'bscntCodf': table.findElements('bscntCodf').first.text,
+        'bscocNcnt': table.findElements('bscocNcnt').first.text,
+        'dNomb': table.findElements('dNomb').first.text,
+        'bscocNmor': table.findElements('bscocNmor').first.text,
+        'bscocImor': table.findElements('bscocImor').first.text,
+        'bsmednser': table.findElements('bsmednser').first.text,
+        'bsmedNume': table.findElements('bsmedNume').first.text,
+        'bscntlati': table.findElements('bscntlati').first.text,
+        'bscntlogi': table.findElements('bscntlogi').first.text,
+        'dNcat': table.findElements('dNcat').first.text,
+        'dCobc': table.findElements('dCobc').first.text,
+        'dLotes': table.findElements('dLotes').first.text,
+      });
+      cutPoints.add(cutPoint);
+    }
+
+    return cutPoints;
+  } else {
+    throw Exception("Error al obtener puntos de corte: ${response.statusCode}");
+  }
+}
+
 
   Future<List<dynamic>> getCuts(String token) async {
     final response = await http.get(
