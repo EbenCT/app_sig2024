@@ -18,7 +18,7 @@ class _RegisterCutScreenState extends State<RegisterCutScreen> {
 
   void _saveCut() {
     final cutsProvider = Provider.of<CutsProvider>(context, listen: false);
-
+/*
     if (_readingController.text.isNotEmpty) {
       final updatedCut = Cut(
         id: widget.cut.id,
@@ -33,7 +33,7 @@ class _RegisterCutScreenState extends State<RegisterCutScreen> {
         failed: true,
       );
       cutsProvider.updateCut(updatedCut);
-    }
+    }*/
 
     Navigator.pop(context);
   }

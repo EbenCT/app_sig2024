@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/cut.dart';
 import '../models/cut_point.dart';
 import '../models/rutas.dart';
+import '../providers/cuts_provider.dart';
 import '../services/api_service.dart';
+import 'map_screen.dart';
 
 class ImportCutsScreen extends StatefulWidget {
   @override
@@ -168,7 +172,20 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
             // Botón Grabar
             ElevatedButton(
               onPressed: () {
-                // Acción para grabar
+                if (_cutPoints.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("No hay puntos de corte para guardar")),
+                  );
+                  return;
+                }
+
+                final cuts = _cutPoints.map((point) => Cut.fromCutPoint(point)).toList();
+                Provider.of<CutsProvider>(context, listen: false).setCuts(cuts);
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapScreen()),
+                );
               },
               child: Text("Grabar"),
             ),
