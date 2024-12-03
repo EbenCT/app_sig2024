@@ -26,6 +26,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _loadCuts();
+    _addCompanyMarker();  
   }
 
 Future<void> _loadCuts() async {
@@ -232,7 +233,19 @@ double _calculateDistance(LatLng a, LatLng b) {
 
   return R * c; // Distancia en metros
 }
-
+  // Función para añadir el marcador de la empresa
+  Future<void> _addCompanyMarker() async {
+    final companyMarkerIcon = await MapUtils.createCompanyMarker();
+    _markers.add(
+      Marker(
+        markerId: MarkerId('company'),
+        position: _startingPoint,
+        icon: companyMarkerIcon,
+        infoWindow: InfoWindow(title: 'COOSIV RL'),
+      ),
+    );
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -269,3 +282,5 @@ double _calculateDistance(LatLng a, LatLng b) {
     );
   }
 }
+
+

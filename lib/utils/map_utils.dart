@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapUtils {
@@ -39,5 +41,34 @@ class MapUtils {
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+  }
+
+// Crear marcador personalizado para la empresa con redimensionamiento
+  static Future<BitmapDescriptor> createCompanyMarker() async {
+    // Cargar la imagen del logo desde los assets
+    final ByteData data = await rootBundle.load('assets/logo-coosivrl.png');
+    final Uint8List bytes = data.buffer.asUint8List();  // Usa Uint8List aquí
+    
+    // Decodificar la imagen
+    final image = await decodeImageFromList(bytes);
+    
+    // Redimensionar la imagen
+    final resizedImage = await _resizeImage(image, 100, 100);  // Ajusta el tamaño aquí
+
+    final img = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+    
+    // Convertir la imagen redimensionada a BitmapDescriptor
+    return BitmapDescriptor.fromBytes(Uint8List.fromList(img!.buffer.asUint8List()));
+  }
+
+  // Función para redimensionar la imagen
+  static Future<ui.Image> _resizeImage(ui.Image image, int width, int height) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, Rect.fromPoints(Offset(0, 0), Offset(width.toDouble(), height.toDouble())));
+    final paint = Paint();
+    canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), paint);
+    final picture = recorder.endRecording();
+    final resizedImage = await picture.toImage(width, height);
+    return resizedImage;
   }
 }
