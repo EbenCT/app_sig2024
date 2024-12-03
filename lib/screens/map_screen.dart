@@ -6,6 +6,8 @@ import 'dart:convert';
 import '../models/cut.dart';
 import 'package:provider/provider.dart';
 import '../providers/cuts_provider.dart';
+import '../utils/map_utils.dart';
+import 'dart:math' as math;
 
 class MapScreen extends StatefulWidget {
   @override
@@ -26,27 +28,35 @@ class _MapScreenState extends State<MapScreen> {
     _loadCuts();
   }
 
-  Future<void> _loadCuts() async {
-    final cutsProvider = Provider.of<CutsProvider>(context, listen: false);
-    final cuts = cutsProvider.cuts;
+Future<void> _loadCuts() async {
+  final cutsProvider = Provider.of<CutsProvider>(context, listen: false);
+  final cuts = cutsProvider.cuts;
 
-    if (cuts.isEmpty) return;
+  if (cuts.isEmpty) return;
 
-    // Añadir marcadores de cortes
-    for (var cut in cuts) {
-      _markers.add(
-        Marker(
-          markerId: MarkerId(cut.id.toString()),
-          position: LatLng(cut.latitude, cut.longitude),
-          infoWindow: InfoWindow(title: cut.name),
-        ),
-      );
-    }
+  // Ordenar los puntos según la proximidad
+  List<Cut> orderedCuts = _orderCutsByProximity(_startingPoint, cuts);
 
-    // Calcular la ruta óptima
-    await _calculateOptimalRoute(cuts);
-    setState(() {});
+  for (int i = 0; i < orderedCuts.length; i++) {
+    final cut = orderedCuts[i];
+    final markerIcon = await MapUtils.createCustomMarkerWithNumber(i + 1, Colors.red);
+
+    _markers.add(
+      Marker(
+        markerId: MarkerId(cut.id.toString()),
+        position: LatLng(cut.latitude, cut.longitude),
+        icon: markerIcon,
+        infoWindow: InfoWindow(title: "${i + 1}. ${cut.name}"),
+      ),
+    );
   }
+
+  // Calcular la ruta óptima
+  await _calculateOptimalRoute(orderedCuts);
+  setState(() {});
+}
+
+
 
 Future<void> _calculateOptimalRoute(List<Cut> cuts) async {
   const int maxWaypoints = 23; // Limite de Google Directions (25 - 2)
@@ -179,6 +189,50 @@ Future<void> _calculateTotalDistanceAndTime(List<dynamic> legs, int numCuts) asy
     }
     return points;
   }
+
+  List<Cut> _orderCutsByProximity(LatLng startPoint, List<Cut> cuts) {
+  List<Cut> orderedCuts = [];
+  LatLng currentPoint = startPoint;
+
+  // Crear una copia de la lista para trabajar sin modificar el original
+  List<Cut> remainingCuts = List.from(cuts);
+
+  while (remainingCuts.isNotEmpty) {
+    // Encontrar el punto más cercano al actual
+    Cut closestCut = remainingCuts.reduce((a, b) {
+      double distanceA = _calculateDistance(currentPoint, LatLng(a.latitude, a.longitude));
+      double distanceB = _calculateDistance(currentPoint, LatLng(b.latitude, b.longitude));
+      return distanceA < distanceB ? a : b;
+    });
+
+    // Añadir el más cercano a la lista ordenada
+    orderedCuts.add(closestCut);
+
+    // Actualizar el punto actual y eliminar el seleccionado de la lista restante
+    currentPoint = LatLng(closestCut.latitude, closestCut.longitude);
+    remainingCuts.remove(closestCut);
+  }
+
+  return orderedCuts;
+}
+
+double _calculateDistance(LatLng a, LatLng b) {
+  const double R = 6371e3; // Radio de la Tierra en metros
+  double phi1 = a.latitude * (math.pi / 180); // Radianes
+  double phi2 = b.latitude * (math.pi / 180);
+  double deltaPhi = (b.latitude - a.latitude) * (math.pi / 180);
+  double deltaLambda = (b.longitude - a.longitude) * (math.pi / 180);
+
+  double haversine = 
+      math.sin(deltaPhi / 2) * math.sin(deltaPhi / 2) +
+      math.cos(phi1) * math.cos(phi2) *
+      math.sin(deltaLambda / 2) * math.sin(deltaLambda / 2);
+
+  double c = 2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
+
+  return R * c; // Distancia en metros
+}
+
 
   @override
   Widget build(BuildContext context) {
