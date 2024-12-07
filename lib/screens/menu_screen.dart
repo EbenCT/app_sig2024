@@ -119,13 +119,15 @@ class MenuScreen extends StatelessWidget {
   void _exportCutsToServer(BuildContext context, User user) async {
     final ApiService apiService = ApiService();
 
-    // Obtén la lista de cortes (suponiendo que se almacenan en memoria).
+    // Obtén la lista de cortes realizados (completados o con observaciones).
     final cutsProvider = Provider.of<CutsProvider>(context, listen: false);
-    final List<Cut> cuts = cutsProvider.cuts;
+    final List<Cut> cutsToExport = cutsProvider.cuts
+        .where((cut) => cut.completed) // Filtra solo los realizados.
+        .toList();
 
-    if (cuts.isEmpty) {
+    if (cutsToExport.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("No hay cortes para exportar.")),
+        SnackBar(content: Text("No hay cortes realizados para exportar.")),
       );
       return;
     }
@@ -134,16 +136,16 @@ class MenuScreen extends StatelessWidget {
       SnackBar(content: Text("Exportando cortes al servidor...")),
     );
 
-    for (final cut in cuts) {
+    for (final cut in cutsToExport) {
       try {
         final result = await apiService.exportCut(
           liNcoc: cut.id,
           liCemc: user.userId, // Código del empleado o usuario.
           ldFcor: DateTime.now().toIso8601String().split('.')[0],
           liPres: 0,
-          liCobc: cut.failed ? 1 : 0,
-          liLcor: cut.lectura,
-          liNofn: cut.completed ? 0 : 1,
+          liCobc: cut.failed ? 1 : 0, // 1 si tiene observación.
+          liLcor: cut.lectura, // Lectura del corte.
+          liNofn: cut.completed ? 1 : 0, // 1 si completado.
           lsAppName: "AppSIG",
         );
 

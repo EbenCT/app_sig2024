@@ -18,12 +18,13 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? _controller;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   LatLng _startingPoint = LatLng(-16.37953779367184, -60.960705279425646);
   String _totalDistance = '';
   String _totalTime = '';
+  int _totalCuts = 0;
+  int _completedCuts = 0;
 
   @override
   void initState() {
@@ -71,7 +72,11 @@ Future<void> _loadCuts() async {
       ),
     );
   }
-
+    // Calcular los contadores de cortes
+  setState(() {
+      _totalCuts = cuts.length;
+      _completedCuts = cuts.where((cut) => cut.completed).length;
+  });
   // Calcular la ruta óptima
   await _calculateOptimalRoute(orderedCuts);
   setState(() {});
@@ -285,7 +290,6 @@ double _calculateDistance(LatLng a, LatLng b) {
   if (result != null) {
     final status = result['status'];
     final observation = result['observation'];
-    final meterReading = result['meterReading'];
 
     // Actualizar el marcador en el mapa
     final newColor = status == 'completed' ? Colors.green : Colors.orange;
@@ -335,7 +339,6 @@ double _calculateDistance(LatLng a, LatLng b) {
           Expanded(
             child: GoogleMap(
               onMapCreated: (controller) {
-                _controller = controller;
               },
               markers: _markers,
               polylines: _polylines,
@@ -352,6 +355,14 @@ double _calculateDistance(LatLng a, LatLng b) {
               children: [
                 Text("Distancia Total: $_totalDistance"),
                 Text("Tiempo Total: $_totalTime"),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Cortes por Realizar: ${_totalCuts - _completedCuts}"),
+                    Text("Cortes Registrados: $_completedCuts"),
+                  ],
+                ),
               ],
             ),
           ),
