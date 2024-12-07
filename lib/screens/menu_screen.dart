@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/cut.dart';
 import '../models/user.dart';
+import '../providers/cuts_provider.dart';
+import '../providers/user_provider.dart';
+import '../services/api_service.dart';
 import 'import_cuts_screen.dart';
 import 'map_screen.dart';
 import 'cuts_list_screen.dart';
 
 class MenuScreen extends StatelessWidget {
-  final User user;
-
-  MenuScreen({required this.user});
-
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserProvider>(context).user;
+
+    if (user == null) {
+      return Scaffold(
+        body: Center(child: Text("Cargando información del usuario...")),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Menú Principal'),
@@ -88,7 +97,7 @@ class MenuScreen extends StatelessWidget {
                   leading: Icon(Icons.upload),
                   title: Text('Exportar Cortes al Servidor'),
                   onTap: () {
-                    _exportCutsToServer(context);
+                    _exportCutsToServer(context, user);
                   },
                 ),
                 ListTile(
@@ -107,13 +116,51 @@ class MenuScreen extends StatelessWidget {
   }
 
   // Función para exportar cortes al servidor.
-  void _exportCutsToServer(BuildContext context) async {
-    // Aquí puedes implementar la lógica para consumir la API de exportación.
-    // Por ahora, mostraré un mensaje de ejemplo.
+  void _exportCutsToServer(BuildContext context, User user) async {
+    final ApiService apiService = ApiService();
+
+    // Obtén la lista de cortes (suponiendo que se almacenan en memoria).
+    final cutsProvider = Provider.of<CutsProvider>(context, listen: false);
+    final List<Cut> cuts = cutsProvider.cuts;
+
+    if (cuts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("No hay cortes para exportar.")),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exportando cortes al servidor...')),
+      SnackBar(content: Text("Exportando cortes al servidor...")),
     );
 
-    // Llama a un método del servicio (ApiService) para enviar los datos al servidor.
+    for (final cut in cuts) {
+      try {
+        final result = await apiService.exportCut(
+          liNcoc: cut.id,
+          liCemc: user.userId, // Código del empleado o usuario.
+          ldFcor: DateTime.now().toIso8601String().split('.')[0],
+          liPres: 0,
+          liCobc: cut.failed ? 1 : 0,
+          liLcor: cut.lectura,
+          liNofn: cut.completed ? 0 : 1,
+          lsAppName: "AppSIG",
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result == 1
+                  ? "Corte ID ${cut.id} exportado con éxito."
+                  : "Error al exportar corte ID ${cut.id}.",
+            ),
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al exportar corte ID ${cut.id}: $e")),
+        );
+      }
+    }
   }
 }

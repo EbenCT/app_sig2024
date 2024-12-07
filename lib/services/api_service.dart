@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:app_sig/utils/variables.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
-import '../models/cut.dart';
 import '../models/cut_point.dart';
 import '../models/rutas.dart';
 
@@ -170,41 +168,60 @@ class ApiService {
   }
 }
 
+Future<int> exportCut({
+    required int liNcoc,
+    required int liCemc,
+    required String ldFcor,
+    required int liPres,
+    required int liCobc,
+    required int liLcor,
+    required int liNofn,
+    required String lsAppName,
+  }) async {
 
-  Future<List<dynamic>> getCuts(String token) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/cuts'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final soapEnvelope = '''
+      <?xml version="1.0" encoding="utf-8"?>
+      <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <W3Corte_UpdateCorte xmlns="http://activebs.net/">
+            <liNcoc>$liNcoc</liNcoc>
+            <liCemc>$liCemc</liCemc>
+            <ldFcor>$ldFcor</ldFcor>
+            <liPres>$liPres</liPres>
+            <liCobc>$liCobc</liCobc>
+            <liLcor>$liLcor</liLcor>
+            <liNofn>$liNofn</liNofn>
+            <lsAppName>$lsAppName</lsAppName>
+          </W3Corte_UpdateCorte>
+        </soap:Body>
+      </soap:Envelope>
+    '''.trim();
+    final headers = {
+        'Content-Type': 'text/xml; charset=utf-8',
+        'SOAPAction': '"http://activebs.net/W3Corte_UpdateCorte"',
+        'Content-Length': soapEnvelope.length.toString(),
+    };
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception("Error al obtener cortes");
-    }
-  }
-
-  Future<void> registerCut(String token, Map<String, dynamic> data) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/register_cut'),
-      headers: {'Authorization': 'Bearer $token'},
-      body: json.encode(data),
+      Uri.parse('$baseUrl/wsBS.asmx'), 
+      headers: headers, 
+      body: soapEnvelope
     );
-
-    if (response.statusCode != 200) {
-      throw Exception("Error al registrar el corte");
+    print("Encabezados: $headers");
+    print("Cuerpo de la solicitud: $soapEnvelope");
+    print("Código de respuesta: ${response.statusCode}");
+    print("Respuesta del servidor: ${response.body}");
+    if (response.statusCode == 200) {
+      // Parsear respuesta para extraer el resultado.
+      final regex = RegExp(r'<W3Corte_UpdateCorteResult>(\d+)<\/W3Corte_UpdateCorteResult>');
+      final match = regex.firstMatch(response.body);
+      if (match != null) {
+        return int.parse(match.group(1)!);
+      }
+      throw Exception("No se pudo interpretar la respuesta del servidor.");
+    } else {
+      throw Exception("Error al exportar corte: ${response.statusCode}");
     }
   }
-  Future<void> exportCuts(String token, List<Cut> cuts) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/export_cuts'),
-    headers: {'Authorization': 'Bearer $token'},
-    body: json.encode({'cuts': cuts.map((e) => e.toJson()).toList()}),
-  );
-
-  if (response.statusCode != 200) {
-    throw Exception("Error al exportar cortes");
-  }
-}
 
 }

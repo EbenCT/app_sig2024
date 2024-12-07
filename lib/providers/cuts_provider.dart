@@ -6,8 +6,8 @@ class CutsProvider with ChangeNotifier {
 
   List<Cut> get cuts => _cuts;
 
-  void setCuts(List<Cut> newCuts) {
-    _cuts = newCuts;
+  void setCuts(List<Cut> cuts) {
+    _cuts = cuts;
     notifyListeners();
   }
 
