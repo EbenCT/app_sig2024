@@ -1,17 +1,17 @@
 class CutPoint {
-  final int bscocNcoc;
-  final int bscntCodf;
-  final int bscocNcnt;
-  final String dNomb;
-  final int bscocNmor;
-  final double bscocImor;
-  final String bsmednser;
-  final String bsmedNume;
-  final double bscntlati;
-  final double bscntlogi;
-  final String dNcat;
-  final String dCobc;
-  final String dLotes;
+  final int bscocNcoc;//Nro corte
+  final int bscntCodf;//Codigo fijo
+  final int bscocNcnt;//Nro cuenta
+  final String dNomb;// nombre propietario
+  final int bscocNmor;//nro de ??
+  final double bscocImor;//??creo que es el consumo
+  final String bsmednser;//nro servicio
+  final String bsmedNume;//nro ??
+  final double bscntlati;//latitud
+  final double bscntlogi;//longitud
+  final String dNcat;//Nombre categoria
+  final String dCobc;//Observacion
+  final String dLotes;//Lote
 
   CutPoint({
     required this.bscocNcoc,

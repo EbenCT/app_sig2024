@@ -7,8 +7,13 @@ class Cut {
   final int fixedCode;
   final double latitude;
   final double longitude;
-  final bool completed;
-  final bool failed;
+  final int ubicCode; // Código de Ubicación
+  final String meterSerial; // Medidor serie
+  final String meterNumber; // Número del medidor
+  bool completed;
+  bool failed;
+  String observation;
+  int lectura;
 
   Cut({
     required this.id,
@@ -17,18 +22,26 @@ class Cut {
     required this.fixedCode,
     required this.latitude,
     required this.longitude,
+    required this.ubicCode,
+    required this.meterSerial,
+    required this.meterNumber,
     this.completed = false,
     this.failed = false,
+    this.observation = "",
+    this.lectura=0,
   });
 
   factory Cut.fromCutPoint(CutPoint point) {
     return Cut(
-      id: point.bscocNcnt,
+      id: point.bscocNcoc,
       location: "${point.bscntlati},${point.bscntlogi}",
       name: point.dNomb,
       fixedCode: point.bscntCodf,
       latitude: point.bscntlati,
       longitude: point.bscntlogi,
+      ubicCode: point.bscocNcoc,
+      meterSerial: point.bsmednser,
+      meterNumber: point.bsmedNume,
     );
   }
 
@@ -40,8 +53,13 @@ class Cut {
       'fixedCode': fixedCode,
       'latitude': latitude,
       'longitude': longitude,
+      'ubicCode': ubicCode,
+      'meterSerial': meterSerial,
+      'meterNumber': meterNumber,
       'completed': completed,
       'failed': failed,
+      'observation': observation,
+      'lectura': lectura
     };
   }
 }

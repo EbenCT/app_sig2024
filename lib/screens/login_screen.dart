@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
+import '../providers/user_provider.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
 import 'menu_screen.dart';
@@ -23,10 +25,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (user.status == 'OK') {
         // Usuario autenticado correctamente, navegar al menú principal.
+        Provider.of<UserProvider>(context, listen: false).setUser(user);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => MenuScreen(user: user),
+            builder: (context) => MenuScreen(),
           ),
         );
       } else {

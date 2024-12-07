@@ -9,6 +9,9 @@ import '../providers/cuts_provider.dart';
 import '../utils/map_utils.dart';
 import 'dart:math' as math;
 
+import 'menu_screen.dart';
+import 'register_cut_screen.dart';
+
 class MapScreen extends StatefulWidget {
   @override
   _MapScreenState createState() => _MapScreenState();
@@ -40,14 +43,31 @@ Future<void> _loadCuts() async {
 
   for (int i = 0; i < orderedCuts.length; i++) {
     final cut = orderedCuts[i];
-    final markerIcon = await MapUtils.createCustomMarkerWithNumber(i + 1, Colors.red);
+
+    // Determinar el color del marcador según el estado actual del corte
+    Color markerColor = Colors.red; // Por defecto
+    if (cut.completed) {
+      markerColor = Colors.green; // Cortado
+    } else if (cut.failed) {
+      markerColor = Colors.orange; // Con observación
+    }
+
+    final markerIcon = await MapUtils.createCustomMarkerWithNumber(i + 1, markerColor);
 
     _markers.add(
       Marker(
         markerId: MarkerId(cut.id.toString()),
         position: LatLng(cut.latitude, cut.longitude),
         icon: markerIcon,
-        infoWindow: InfoWindow(title: "${i + 1}. ${cut.name}"),
+        infoWindow: InfoWindow(
+          title: "${i + 1}. ${cut.name}",
+          snippet: cut.completed
+              ? "Estado: Cortado"
+              : cut.failed
+                  ? "Estado: Con Observación"
+                  : "Estado: Pendiente",
+        ),
+        onTap: () => _onMarkerTap(cut),
       ),
     );
   }
@@ -247,10 +267,68 @@ double _calculateDistance(LatLng a, LatLng b) {
     setState(() {});
   }
 
+  void _onMarkerTap(Cut cut) async {
+
+  if (cut.completed) {
+    // Mostrar mensaje si el corte ya está completado
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Este corte ya está completado y no se puede editar.")),
+    );
+    return;
+  }
+
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => RegisterCutScreen(cut: cut)),
+  );
+
+  if (result != null) {
+    final status = result['status'];
+    final observation = result['observation'];
+    final meterReading = result['meterReading'];
+
+    // Actualizar el marcador en el mapa
+    final newColor = status == 'completed' ? Colors.green : Colors.orange;
+    final markerIcon = await MapUtils.createCustomMarkerWithNumber(cut.id, newColor);
+
+    _markers.removeWhere((marker) => marker.markerId.value == cut.id.toString());
+    _markers.add(
+      Marker(
+        markerId: MarkerId(cut.id.toString()),
+        position: LatLng(cut.latitude, cut.longitude),
+        icon: markerIcon,
+        infoWindow: InfoWindow(
+          title: cut.name,
+          snippet: status == 'completed' ? "Corte completado" : observation,
+        ),
+        onTap: () => _onMarkerTap(cut),
+      ),
+    );
+
+    setState(() {});
+  }
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Mapa de Cortes')),
+      appBar: AppBar(
+      title: Text('Mapa de Cortes'),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.menu),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MenuScreen(), // Asegúrate de que `user` esté definido.
+              ),
+            );
+          },
+        ),
+      ],
+    ),
       body: Column(
         children: [
           // Mapa
