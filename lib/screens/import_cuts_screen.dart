@@ -16,6 +16,7 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
   final ApiService apiService = ApiService();
   List<RouteData> _routes = [];
   List<CutPoint> _cutPoints = [];
+  Map<int, bool> _selectedPoints = {}; // Estado de selección por corte
   RouteData? _selectedRoute;
   final TextEditingController _codeController = TextEditingController();
 
@@ -29,7 +30,6 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
     try {
       final routes = await apiService.fetchRoutes();
       setState(() {
-        // Agrega la opción "TODOS LOS CORTES" al inicio.
         _routes = [
           RouteData(
             bsrutnrut: 1,
@@ -65,7 +65,6 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
 
     try {
       if (fixedCode != null) {
-        // Selecciona automáticamente la ruta basada en el código fijo.
         final matchingRoute = _routes.firstWhere(
           (route) => route.bsrutride.toString() == fixedCode,
           orElse: () => RouteData(
@@ -96,6 +95,9 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
       );
       setState(() {
         _cutPoints = cutPoints;
+        _selectedPoints = {
+          for (var point in cutPoints) point.bscocNcnt: false,
+        }; // Inicializa todos los puntos como no seleccionados.
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +114,6 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Lista desplegable
             DropdownButton<RouteData>(
               value: _selectedRoute,
               hint: Text("Seleccione una ruta"),
@@ -130,7 +131,6 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
               },
             ),
             SizedBox(height: 20),
-            // Campo de texto para el código fijo
             TextField(
               controller: _codeController,
               decoration: InputDecoration(
@@ -140,7 +140,6 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
               keyboardType: TextInputType.number,
             ),
             SizedBox(height: 20),
-            // Botón Confirmar
             ElevatedButton(
               onPressed: () {
                 final fixedCode = _codeController.text.isNotEmpty
@@ -154,32 +153,36 @@ class _ImportCutsScreenState extends State<ImportCutsScreen> {
               child: Text("Confirmar"),
             ),
             SizedBox(height: 20),
-            // Lista de cortes
             Expanded(
               child: ListView.builder(
                 itemCount: _cutPoints.length,
                 itemBuilder: (context, index) {
                   final point = _cutPoints[index];
-                  return ListTile(
+                  return CheckboxListTile(
                     title: Text("${point.dNomb}"),
                     subtitle: Text("C.U.: ${point.bscocNcnt}, C.F.: ${point.bscntCodf}"),
-                    trailing: Text("Lat: ${point.bscntlati}, Lon: ${point.bscntlogi}"),
+                    value: _selectedPoints[point.bscocNcnt],
+                    onChanged: (isSelected) {
+                      setState(() {
+                        _selectedPoints[point.bscocNcnt] = isSelected ?? false;
+                      });
+                    },
                   );
                 },
               ),
             ),
             SizedBox(height: 20),
-            // Botón Grabar
             ElevatedButton(
               onPressed: () {
-                if (_cutPoints.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("No hay puntos de corte para guardar")),
-                  );
-                  return;
-                }
+                final selectedPoints = _cutPoints
+                    .where((point) => _selectedPoints[point.bscocNcnt] == true)
+                    .toList();
 
-                final cuts = _cutPoints.map((point) => Cut.fromCutPoint(point)).toList();
+                final pointsToSave = selectedPoints.isNotEmpty
+                    ? selectedPoints
+                    : _cutPoints; // Si no hay seleccionados, toma todos.
+
+                final cuts = pointsToSave.map((point) => Cut.fromCutPoint(point)).toList();
                 Provider.of<CutsProvider>(context, listen: false).setCuts(cuts);
 
                 Navigator.push(
