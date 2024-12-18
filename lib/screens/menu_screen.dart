@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/cut.dart';
-import '../models/user.dart';
-import '../providers/cuts_provider.dart';
 import '../providers/user_provider.dart';
-import '../services/api_service.dart';
+import 'export_cuts_screen.dart';
 import 'import_cuts_screen.dart';
 import 'map_screen.dart';
 import 'cuts_list_screen.dart';
@@ -97,7 +94,10 @@ class MenuScreen extends StatelessWidget {
                   leading: Icon(Icons.upload),
                   title: Text('Exportar Cortes al Servidor'),
                   onTap: () {
-                    _exportCutsToServer(context, user);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ExportCutsScreen()),
+                    );
                   },
                 ),
                 ListTile(
@@ -113,56 +113,5 @@ class MenuScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // Función para exportar cortes al servidor.
-  void _exportCutsToServer(BuildContext context, User user) async {
-    final ApiService apiService = ApiService();
-
-    // Obtén la lista de cortes realizados (completados o con observaciones).
-    final cutsProvider = Provider.of<CutsProvider>(context, listen: false);
-    final List<Cut> cutsToExport = cutsProvider.cuts
-        .where((cut) => cut.completed) // Filtra solo los realizados.
-        .toList();
-
-    if (cutsToExport.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("No hay cortes realizados para exportar.")),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Exportando cortes al servidor...")),
-    );
-
-    for (final cut in cutsToExport) {
-      try {
-        final result = await apiService.exportCut(
-          liNcoc: cut.id,
-          liCemc: user.userId, // Código del empleado o usuario.
-          ldFcor: DateTime.now().toIso8601String().split('.')[0],
-          liPres: 0,
-          liCobc: cut.failed ? 1 : 0, // 1 si tiene observación.
-          liLcor: cut.lectura, // Lectura del corte.
-          liNofn: cut.completed ? 1 : 0, // 1 si completado.
-          lsAppName: "AppSIG",
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result == 1
-                  ? "Corte ID ${cut.id} exportado con éxito."
-                  : "Error al exportar corte ID ${cut.id}.",
-            ),
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al exportar corte ID ${cut.id}: $e")),
-        );
-      }
-    }
   }
 }
